@@ -5,7 +5,6 @@ import DraggableMarker from './DraggableMarker';
 import { collection, db, doc, setDoc } from '../firebase';
 import { MarkerData } from '../types';
 
-
 const MapEventsHandler: React.FC<{ onClick: (event: L.LeafletMouseEvent) => void }> = ({ onClick }) => {
 	const map = useMap();
 
@@ -23,6 +22,11 @@ const MapComponent: React.FC = () => {
 	const [markers, setMarkers] = useState<MarkerData[]>([]);
 	const [nextId, setNextId] = useState(1);
 
+	const formatDate = (timestamp: number): string => {
+		const date = new Date(timestamp);
+		return date.toISOString(); 
+	};
+
 	const addMarker = async (event: L.LeafletMouseEvent) => {
 		const { lat, lng } = event.latlng;
 		const newMarker: MarkerData = {
@@ -32,18 +36,18 @@ const MapComponent: React.FC = () => {
 			timestamp: Date.now()
 		};
 		const prevMarkerId = nextId - 1;
+
 		await setDoc(doc(collection(db, 'quests'), `quest_${nextId}`), {
 			Location: { lat: newMarker.latitude, lng: newMarker.longitude },
-			Timestamp: newMarker.timestamp,
+			Timestamp: formatDate(newMarker.timestamp),
 		});
-		if (prevMarkerId >= 0) {
-			await setDoc(doc(db, 'quests', `quest_${prevMarkerId}`), {
-				Next: `quest_${nextId}`
-			}, { merge: true });
-		}
+
+		await setDoc(doc(db, 'quests', `quest_${prevMarkerId}`), {
+			Next: `quest_${nextId}`
+		}, { merge: true });
+
 		setMarkers([...markers, newMarker]);
 		setNextId(nextId + 1);
-
 	};
 
 	const handleDragEnd = async (updatedMarker: MarkerData) => {
@@ -54,7 +58,7 @@ const MapComponent: React.FC = () => {
 		));
 		await setDoc(doc(db, 'quests', `quest_${updatedMarker.id}`), {
 			Location: { lat: updatedMarker.latitude, lng: updatedMarker.longitude },
-			Timestamp: updatedMarker.timestamp
+			Timestamp: formatDate(updatedMarker.timestamp)
 		});
 	};
 
