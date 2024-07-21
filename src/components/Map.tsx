@@ -31,11 +31,16 @@ const MapComponent: React.FC = () => {
 			longitude: lng,
 			timestamp: Date.now()
 		};
+		const prevMarkerId = nextId - 1;
 		await setDoc(doc(collection(db, 'quests'), `quest_${nextId}`), {
 			Location: { lat: newMarker.latitude, lng: newMarker.longitude },
 			Timestamp: newMarker.timestamp,
-			Next: null
 		});
+		if (prevMarkerId >= 0) {
+			await setDoc(doc(db, 'quests', `quest_${prevMarkerId}`), {
+				Next: `quest_${nextId}`
+			}, { merge: true });
+		}
 		setMarkers([...markers, newMarker]);
 		setNextId(nextId + 1);
 
